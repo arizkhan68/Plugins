@@ -5,6 +5,7 @@ from ij import ImagePlus, IJ, WindowManager, plugin
 from ij.gui import ProfilePlot, Roi, PolygonRoi
 from ij.plugin import Commands
 from ij.measure import ResultsTable
+import java.lang.System.gc
 
 #@ String (label="Please enter staining # 1", value = "") staining1
 #@ String (label="Please enter staining # 2", value = "") staining2
@@ -56,19 +57,19 @@ if IJ.isResultsWindow():
   IJ.run("Close")
 
 ################################################
-# Obtained from https://thispointer.com/python-how-to-get-list-of-files-in-directory-and-sub-directories/ 
+# Obtained from https://thispointer.com/python-how-to-get-list-of-files-in-directory-and-sub-directories/
 #non-recursive version
 
 def listDir(dirName, file_type, recursive = False):
-  # create a list of file and sub directories 
-  # names in the given directory 
+  # create a list of file and sub directories
+  # names in the given directory
   listOfFile = os.listdir(dirName)
   allFiles = list()
   # Iterate over all the entries
   for entry in listOfFile:
     # Create full path
     fullPath = os.path.join(dirName, entry)
-    # If entry is a directory then get the list of files in this directory 
+    # If entry is a directory then get the list of files in this directory
     if fullPath.endswith(file_type) or fullPath.endswith(file_type + os.path.sep):
         allFiles.append(fullPath)
     elif recursive:
@@ -112,7 +113,7 @@ def arrayCheck(writeList):
 
 		OriginX = float(writeList[j][0])
 		OriginY = float(writeList[j][1])
-		# finds first and second closest points on the 
+		# finds first and second closest points on the
 		for i in range(len(writeList)):
 			newX = float(writeList[i][0])
 			newY = float(writeList[i][1])
@@ -144,8 +145,6 @@ def arrayCheck(writeList):
 
 ##################################################################################
 
-
-
 def sortPoints(temp_file, directory):
 	filename = directory + temp_file
 	f = open(filename, 'r')
@@ -163,13 +162,13 @@ def sortPoints(temp_file, directory):
 	writeFile = open(mod_file, 'w')
 	writeArray = []
 	iterator = 0
-	
+
 	while(len(list) != 0):
 		maxDist = 100000000000
 		OriginX = float(list[iterator][0])
 		OriginY = float(list[iterator][1])
 		writeArray.append(list[iterator])
-		
+
 		list.pop(iterator)
 		for i in range(len(list)):
 		  newX = float(list[i][0])
@@ -180,12 +179,12 @@ def sortPoints(temp_file, directory):
 		    iterator = i
 	#iterator should point to the closest elemnt to origin point...
 	#added to write array in the next loop through
-	
+
 	writeArray = arrayCheck(writeArray)
 	writeFile.write(top)
 	for i in range(len(writeArray)):
 	    writeFile.write(str(i) + str(delim) + str(writeArray[i][0])+ str(delim) + str(writeArray[i][1]) + str(delim) + str(writeArray[i][2]) + str(delim) + str(writeArray[i][3]) + str(delim) + str(writeArray[i][4]) + str(delim) + str(writeArray[i][5]))
-	
+
 	f.close()
 	writeFile.close()
 	os.remove(filename)
@@ -207,7 +206,7 @@ def saveProfile(nch, top, bottom, staining, genotype, staining_dir, image_name, 
 		temp_imp = IJ.getImage()
 		top = temp_imp.NSlices
 		bottom = 1
-  
+
 	for j in range(bottom, top+1):
 	  imp1 = IJ.getImage()
 	  imp1.setC(nch)
@@ -226,15 +225,15 @@ def saveProfile(nch, top, bottom, staining, genotype, staining_dir, image_name, 
 	  for j in range(len(eval("profile" + str(top)))):
 	#      print([profile1[j], profile2[j] ], max([profile1[j], profile2[j] ]))
 	    x = list()
-	    
+
 	    for k in range(bottom, top+1):
-	      x.append("profile" + str(k) + "[j]")
+	      x.append(eval("profile" + str(k) + "[j]"))
 	    #print(x)
 	    if intensity_to_process == "max":
-	    	text_file.write("\n" + str(cd) + "," + str(cd_no) + "," + str(j) + "," + str(eval(max(x))))
+	    	text_file.write("\n" + str(cd) + "," + str(cd_no) + "," + str(j) + "," + str(max(x)))
 	    	#print(len(x))
 	    else:
-	    	
+
 	    	#print(int(len(x)))
 	    	total = 0
 	    	for element in x:
@@ -280,7 +279,7 @@ def processImage():
   makeDir(marker_dir, profile_dir)
   csv_file = saveResults(imp, marker_dir)
   cd_type = list(); xpoints = list(); ypoints = list(); slices = list()
-  
+
   with open(csv_file, 'r') as csv_file:
     csv_reader = csv.reader(csv_file)
     next(csv_reader)
@@ -295,7 +294,7 @@ def processImage():
     imp.setRoi(PolygonRoi(xpoints,ypoints,Roi.POLYLINE))
     print("Not enough cds")
     imp.close()
-    return()  
+    return()
   start_time= time.time()
   line = "line=" + str(linewidth)
   IJ.run(imp, "Line Width...", line)
@@ -330,9 +329,16 @@ def processImage():
   end_time= time.time()
   print(int(end_time-start_time))
   imp.close()
+#############################################################################
+def remove_marker_dir(curr_dir):
+  directory = os.path.join(curr_dir, "markers")
+  if os.path.exists(directory):
+    shutil.rmtree(directory)
+  directory = os.path.join(curr_dir, "plot_profile")
+  if os.path.exists(directory):
+    shutil.rmtree(directory)
 
-
-
+####################################################################################
 def main():
   if (WindowManager.getImageCount() > 0):
     IJ.run("Save")
@@ -346,7 +352,7 @@ def main():
       selected_dir = selected_dir + os.path.sep
     dir_list = list()
     file_type = "stitched_images"
-    
+
     if selected_dir.endswith(file_type + os.path.sep):
       dir_list.append(selected_dir)
       #print(dir_list)
@@ -361,12 +367,17 @@ def main():
           if os.path.isdir(os.path.join(os.path.abspath(dir), filename)):
             genotype_dirs.append(os.path.join(os.path.abspath(dir), filename))
         for genotype_dir in genotype_dirs:
+          java.lang.System.gc()
+          java.lang.System.gc()
+          java.lang.System.gc()
           image_list = listDir(genotype_dir, file_type = ".tiff", recursive = False)
+          remove_marker_dir(genotype_dir)
           for image in image_list:
             IJ.open(image)
             processImage()
     else:
       image_list = listDir(selected_dir, file_type = ".tiff", recursive = False)
+      remove_marker_dir(selected_dir)
       for image in image_list:
         IJ.open(image)
         processImage()

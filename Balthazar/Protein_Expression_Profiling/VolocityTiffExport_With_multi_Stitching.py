@@ -109,10 +109,10 @@ def mainStitching(tiff_list, tiff_dir, stitched_dir, luts):
 		for k in range(images_num_to_stitch):
 			print(images_num_to_stitch)
 			x = i + k
-			shutil.copyfile(tiff_dir + tiff_list[x], temp_dir + tiff_list[x])
+			shutil.move(tiff_dir + tiff_list[x], temp_dir + tiff_list[x])
 		
 		
-		luts = stitch(temp_dir, stitched_dir,luts)
+		luts = stitch(temp_dir, tiff_dir, stitched_dir, luts)
 
   shutil.rmtree(temp_dir)
   return luts
@@ -120,7 +120,7 @@ def mainStitching(tiff_list, tiff_dir, stitched_dir, luts):
 
 #############################################################
 
-def stitch(temp_dir, stitched_dir, luts):
+def stitch(temp_dir, tiff_dir, stitched_dir, luts):
   IJ.run("Grid/Collection stitching", "type=[Unknown position] order=[All files in directory] directory=[" + temp_dir + "] output_textfile_name=TileConfiguration.txt fusion_method=[Linear Blending] regression_threshold=0.30 max/avg_displacement_threshold=2.50 absolute_displacement_threshold=3.50 computation_parameters=[Save computation time (but use more RAM)] image_output=[Fuse and display]")
 
 #  wait(60000)
@@ -133,7 +133,7 @@ def stitch(temp_dir, stitched_dir, luts):
         b = b + "-" + tiff_file[:3]
       else:
         b = b + tiff_file[:3]
-    os.remove(temp_dir + tiff_file)
+      shutil.move(temp_dir + tiff_file, tiff_dir + tiff_file)
   save_file = b + ".tiff"
   imp = IJ.getImage()
 
